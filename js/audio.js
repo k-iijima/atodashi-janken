@@ -52,3 +52,6 @@ export function seFoul() {
   tone(220, 0.35, 0.22);
   setTimeout(() => tone(165, 0.5, 0.22), 120);
 }
+
+/** カウントダウンの小さな拍子木 */
+export function seTick() { tone(550, 0.08, 0.1); }

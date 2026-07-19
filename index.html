@@ -42,6 +42,10 @@
     <div class="video-wrap">
       <video id="video" playsinline></video>
       <canvas id="skeleton" width="640" height="480"></canvas>
+      <!-- 勝負が決まった瞬間のフレームを焼き付けて表示する(判定写真)。
+           表示が止まるだけで、裏ではカメラも認識も動き続けている -->
+      <canvas id="freeze" width="640" height="480"></canvas>
+      <span class="photo-tag" id="photoTag">判定写真</span>
       <div class="stamp stamp-user" id="userStamp">反則<br>負け</div>
     </div>
   </section>

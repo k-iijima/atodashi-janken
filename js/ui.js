@@ -15,7 +15,7 @@ const $ = (id) => document.getElementById(id);
 
 /** クラスを付け直してCSSアニメーションを頭から再生する */
 function replay(el, ...classes) {
-  el.classList.remove("say", "pon", "foul", "show", "go", "on", "reveal");
+  el.classList.remove("say", "pon", "foul", "count", "show", "go", "on", "reveal");
   void el.offsetWidth; // ← reflow を強制(アニメーション再始動のおまじない)
   el.classList.add(...classes);
 }
@@ -31,7 +31,8 @@ export function setStatus(text) {
 /**
  * 掛け声を1語表示する。
  * @param {string} word - 表示する語
- * @param {"say"|"pon"|"foul"} style - 通常 / ぽん!(朱・集中線つき) / 反則(朱)
+ * @param {"say"|"pon"|"foul"|"count"} style
+ *   通常 / ぽん!(朱・集中線つき) / 反則(朱) / カウントダウン(控えめ)
  */
 export function chant(word, style = "say") {
   const el = $("chantText");
@@ -76,13 +77,14 @@ export function aiCallFoul(newHand) {
   replay($("userStamp"), "on"); // 挑戦者側に「反則負け」のハンコ
 }
 
-/** 次の勝負に向けて盤面を初期状態へ戻す */
+/** 次の勝負に向けて盤面を初期状態へ戻す(判定写真も外す) */
 export function resetBoard() {
   $("aiHand").classList.remove("pumping", "reveal");
   $("aiHand").textContent = "🤖";
   $("aiLabel").textContent = "";
   $("aiStamp").classList.remove("on");
   $("userStamp").classList.remove("on");
+  unfreeze();
 }
 
 /* ---------------- 勝敗の札 ---------------- */
@@ -115,6 +117,41 @@ export function updateScore(s) {
 /** 推論レイテンシ(毎フレーム更新なので個別関数にしている) */
 export function updateInferLatency(ms) {
   $("infer").textContent = ms.toFixed(0) + "ms";
+}
+
+/* ---------------- 判定写真(フレーム凍結) ---------------- */
+
+const freezeCanvas = $("freeze");
+const fctx = freezeCanvas.getContext("2d");
+
+/**
+ * いまのカメラ映像+骨格を判定写真として焼き付け、ライブ映像の上に被せる。
+ * 以降、画面上の挑戦者は「判定の瞬間」で止まって見える
+ * (裏ではカメラも認識も動き続けている。止まるのは表示だけ)。
+ *
+ * @param {string} tagText - 写真に貼る札の文言(「判定写真」「犯行写真」)
+ */
+export function freezeFrame(tagText) {
+  const video = document.getElementById("video");
+  fctx.drawImage(video, 0, 0, freezeCanvas.width, freezeCanvas.height);
+  fctx.drawImage(canvas, 0, 0); // 骨格の線ごと写真に残す
+  freezeCanvas.classList.add("on");
+  const tag = $("photoTag");
+  tag.textContent = tagText;
+  tag.classList.add("on");
+}
+
+/** 判定写真を外してライブ映像に戻す */
+export function unfreeze() {
+  freezeCanvas.classList.remove("on");
+  $("photoTag").classList.remove("on");
+}
+
+/* ---------------- カウントダウン ---------------- */
+
+/** 次の勝負までの数字を1つ表示する */
+export function countdown(n) {
+  chant(String(n), "count");
 }
 
 /* ---------------- 骨格描画 ---------------- */

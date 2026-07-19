@@ -4,27 +4,30 @@
  * 状態遷移:
  *
  *   idle ──手を検出──▶ chant(じゃん・けん・ぽん!)
- *                         │ ぽん!
- *                         ▼
- *                       judge(手を読む)──読めた──▶ result(当機が後出しして勝つ)
- *                         │ タイムアウト                │
- *                         ▼                            │ 手替えを検出 → 反則宣告(result継続)
- *                       result(不成立)                 │
- *                         │                            │
- *                         └──手が見えていれば chant へ / いなければ idle へ
+ *                         │ ぽん!                          ▲
+ *                         ▼                               │
+ *                       judge(手を読む)──読めた──▶ result │
+ *                         │ タイムアウト     (判定写真で凍結。│
+ *                         ▼             直後の短い窓だけ    │
+ *                       result(不成立)  手替え=反則を監視)  │
+ *                         │                  │             │
+ *                         └───────┬──────────┘             │
+ *                                 ▼                        │
+ *                     countdown(3・2・1)──手が見えていれば──┘
+ *                                 └──いなければ idle へ
  *
  * このファイルは「毎フレームの観測結果」を受け取って状態を進めるだけで、
  * DOM には触らない(演出は ui.js に依頼する)。
  */
 
-import { TIMING, FRAMES } from "./config.js";
+import { TIMING, FRAMES, COUNT_FROM } from "./config.js";
 import { BEATS } from "./gesture.js";
 import * as ui from "./ui.js";
 import * as se from "./audio.js";
 
 /* ---------------- 内部状態 ---------------- */
 
-let state = "idle"; // idle | chant | judge | result
+let state = "idle"; // idle | chant | judge | result | countdown
 
 // 手のデバウンス:同じ判定が何フレーム続いたか
 let candidate = null;      // 直近の生判定(rock/scissors/paper/null)
@@ -37,9 +40,11 @@ let missCount = 0;    // 手を連続で見失っているフレーム数
 
 // 勝負ごとの記録
 let ponAt = 0;          // 「ぽん!」を宣言した時刻
+let revealAt = 0;       // 当機が手を出した時刻(反則監視窓の起点)
 let judgedHand = null;  // この勝負で挑戦者が出したと判定した手(nullなら不成立)
 let judgeTimer = 0;
 let resultTimer = 0;
+let countTimer = 0;
 
 // 戦績
 const stats = { rounds: 0, wins: 0, fouls: 0 };
@@ -83,11 +88,16 @@ function aiPlay(userHand) {
   clearTimeout(judgeTimer);
   state = "result";
   judgedHand = userHand;
+  revealAt = performance.now();
 
   // 後出し時間 = 「手が見え始めてから当機が出すまで」。
   // ただし ぽん! より前から出しっぱなしの手は ぽん! を起点にする
   // (でないと後出し時間がマイナスになり自慢にならない)
-  const reaction = performance.now() - Math.max(ponAt, candidateSince);
+  const reaction = revealAt - Math.max(ponAt, candidateSince);
+
+  // 判定の瞬間を写真で残し、以降の表示を凍結する。
+  // これで結果表示中に手がブレても「画面上の判定」は動かない
+  ui.freezeFrame("判定写真");
 
   ui.aiReveal(BEATS[userHand], userHand);
   ui.verdict("当機の勝ち!!");
@@ -109,8 +119,10 @@ function aiPlay(userHand) {
 /** 結果表示中に挑戦者が手を変えた:後出しにつき反則負け */
 function foul(newHand) {
   clearTimeout(resultTimer);
-  judgedHand = newHand; // さらに変えたら、また検出する(何度でも)
+  judgedHand = newHand;          // さらに変えたら、また検出する(何度でも)
+  revealAt = performance.now();  // 監視窓も仕切り直す
 
+  ui.freezeFrame("犯行写真"); // 手を変えた瞬間を証拠として差し替える
   ui.chant("後出し!", "foul");
   ui.aiCallFoul(newHand);
   ui.verdict("貴殿の反則負け!!", true);
@@ -125,14 +137,52 @@ function foul(newHand) {
   resultTimer = setTimeout(nextRoundOrIdle, TIMING.RESULT_MS);
 }
 
-/** 結果表示が終わった:手が見えていれば次の勝負、いなければ待機に戻る */
+/**
+ * 挑戦者がまだ土俵に居るか。
+ * presentCount は1フレーム見失っただけで0に戻るので、
+ * 「連続 MISS フレーム見失うまでは居る」とみなして判定を頑健にする。
+ */
+function stillAround() {
+  return missCount < FRAMES.MISS;
+}
+
+/** 結果表示が終わった:カウントダウンを経て次の勝負へ */
 function nextRoundOrIdle() {
-  if (presentCount > 0) {
-    startChant();
+  if (stillAround()) {
+    startCountdown();
   } else {
-    state = "idle";
-    ui.resetBoard();
+    toIdle();
   }
+}
+
+/**
+ * 次の勝負までのカウントダウン(3・2・1)。
+ * 判定写真を外してライブ映像に戻し、挑戦者が構え直す時間を作る。
+ * この間は反則監視をしない(もう勝負は閉じている)。
+ */
+function startCountdown() {
+  state = "countdown";
+  ui.resetBoard(); // 判定写真・ハンコを外し、当機も🤖に戻る
+
+  let n = COUNT_FROM;
+  const step = () => {
+    if (n > 0) {
+      ui.countdown(n);
+      se.seTick();
+      n--;
+      countTimer = setTimeout(step, TIMING.COUNT_BEAT);
+    } else {
+      // カウントが尽きた:手が見えていれば開戦、いなければ待機へ
+      stillAround() ? startChant() : toIdle();
+    }
+  };
+  step();
+}
+
+/** 待機状態に戻す */
+function toIdle() {
+  state = "idle";
+  ui.resetBoard();
 }
 
 /* ---------------- 毎フレームの入口 ---------------- */
@@ -182,10 +232,12 @@ export function onFrame(raw, present) {
   // --- 結果表示中:手替え(貴殿の後出し)を監視する ---
   // 条件をすべて満たしたときだけ反則:
   //   ・成立した勝負である(judgedHand がある)
+  //   ・当機が出した直後の監視窓の中である(窓の外の手ブレ・脱力は冤罪にしない)
   //   ・判定した手と違う有効な手に変わった
   //   ・通常より厳しいフレーム数だけ連続した(冤罪防止)
   // なお手を引っ込めるだけ(candidate が null)はセーフ。
   if (state === "result" && judgedHand !== null &&
+      performance.now() - revealAt <= TIMING.FOUL_WINDOW &&
       candidate !== null && candidate !== judgedHand &&
       candidateCount >= FRAMES.FOUL) {
     foul(candidate);
