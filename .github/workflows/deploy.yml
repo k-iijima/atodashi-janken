@@ -1,0 +1,49 @@
+# GitHub Pages への自動公開ワークフロー
+#
+# main ブランチに push するたびに、このリポジトリの内容をそのまま
+# GitHub Pages に公開する。ビルド工程がない静的サイトなので、
+# 「チェックアウト → まるごとアーティファクト化 → デプロイ」の3手で終わる。
+#
+# 初回のみ、リポジトリの Settings → Pages → Source を
+# 「GitHub Actions」に切り替えておくこと(これを忘れると deploy が失敗する)。
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # Actions タブから手動実行もできるようにしておく
+
+# Pages へのデプロイに必要な最小権限。
+# id-token は deploy-pages が OIDC でデプロイ元を証明するために使う
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同時に2つのデプロイが走らないようにする(古い方を打ち切る)
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }} # 公開URLが Actions の画面に表示される
+    steps:
+      - name: リポジトリを取得
+        uses: actions/checkout@v4
+
+      - name: Pages の設定を取得
+        uses: actions/configure-pages@v5
+
+      - name: サイト一式をアーティファクト化
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: . # ビルド不要なのでリポジトリのルートをそのまま公開する
+
+      - name: Pages へデプロイ
+        id: deployment
+        uses: actions/deploy-pages@v4

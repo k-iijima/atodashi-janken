@@ -1,0 +1,260 @@
+/* =====================================================================
+ * 絶対負けない後出しじゃんけん番所 — スタイル
+ *
+ * デザイン方針:「AIっぽさ」(紫グラデ・光彩・丸カード・無個性フォント)を
+ * 避け、昭和の駄菓子屋ゲーセン×漫画の手仕事感に振り切る。
+ *   - 生成り(きなり)の紙背景+ノイズテクスチャ
+ *   - 角ばった黒枠カード+ズレた「ベタ落ち影」(box-shadow をぼかさない)
+ *   - 朱色のハンコ、筆文字、集中線、電光掲示板風スコア
+ *   - グラデーション・blur・glow は使わない
+ * ===================================================================== */
+
+:root {
+  --paper: #f3ecdb;      /* 生成り紙 */
+  --ink: #2b2620;        /* 墨 */
+  --shu: #c73e2d;        /* 朱色(ハンコ・強調) */
+  --ai: #274a78;         /* 藍色(当機側) */
+  --board: #1d1b18;      /* 場内掲示板の黒 */
+  --lamp: #ffb000;       /* 電光掲示板のアンバー */
+  --font-body: "Zen Kaku Gothic New", sans-serif;
+  --font-head: "RocknRoll One", sans-serif;
+  --font-brush: "Yuji Syuku", serif;
+  --font-lamp: "DotGothic16", monospace;
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+body {
+  background-color: var(--paper);
+  /* 紙の質感:SVG ノイズを薄く重ねる(画像ファイル不要) */
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/><feColorMatrix type="matrix" values="0 0 0 0 0.17 0 0 0 0 0.15 0 0 0 0 0.12 0 0 0 0.05 0"/></filter><rect width="240" height="240" filter="url(%23n)"/></svg>');
+  color: var(--ink);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 28px 16px; gap: 18px;
+}
+
+/* ---------------------------------------------------------------------
+ * 看板(ヘッダー)
+ * ------------------------------------------------------------------- */
+.signboard { position: relative; text-align: center; max-width: 760px; }
+
+.title {
+  font-family: var(--font-head);
+  font-size: clamp(1.5rem, 4.5vw, 2.4rem);
+  letter-spacing: .06em;
+  /* 二重下線で提灯屋の看板感 */
+  border-bottom: 4px double var(--ink);
+  padding: 0 .5em .15em;
+  display: inline-block;
+}
+.title-strong { color: var(--shu); }
+
+/* 勝率100%の丸ハンコ。少し傾け、にじみは小さな text-shadow で表現 */
+.hanko {
+  position: absolute; top: -14px; right: -8px;
+  width: 74px; height: 74px; border-radius: 50%;
+  border: 3px solid var(--shu);
+  color: var(--shu);
+  font-family: var(--font-brush);
+  font-size: 1.05rem; line-height: 1.15;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  transform: rotate(11deg);
+  text-shadow: .5px .5px 0 var(--shu);
+  opacity: .88;
+}
+
+.subtitle { margin-top: 10px; font-size: .85rem; line-height: 1.8; }
+.subtitle strong { color: var(--shu); }
+
+.status { font-size: .85rem; min-height: 1.5em; color: var(--ai); font-weight: 700; }
+
+/* ---------------------------------------------------------------------
+ * 土俵(対戦エリア)
+ * ------------------------------------------------------------------- */
+.arena {
+  position: relative;
+  display: flex; gap: 22px; flex-wrap: wrap; justify-content: center;
+}
+
+/* 対戦者カード:角ばった黒枠+ベタ落ち影+わずかな傾きで「手貼り」感 */
+.fighter-card {
+  position: relative;
+  background: #fffdf6;
+  border: 3px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--ink);
+  padding: 14px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.tilt-left  { transform: rotate(-.6deg); }
+.tilt-right { transform: rotate(.8deg); }
+
+/* 名札:カード上辺に貼った短冊 */
+.name-tag {
+  position: absolute; top: -14px; left: 14px;
+  background: var(--ink); color: var(--paper);
+  font-family: var(--font-head); font-size: .85rem;
+  padding: 3px 14px;
+  transform: rotate(-1.5deg);
+}
+.name-tag-ai { background: var(--ai); left: auto; right: 14px; transform: rotate(1.5deg); }
+
+.video-wrap { position: relative; width: 440px; max-width: 86vw; aspect-ratio: 4/3; }
+video, canvas#skeleton {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  transform: scaleX(-1); /* 鏡写し表示 */
+  object-fit: cover;
+  border: 2px solid var(--ink);
+}
+
+/* 当機の手 */
+.ai-hand-box {
+  position: relative;
+  width: 440px; max-width: 86vw; aspect-ratio: 4/3;
+  border: 2px solid var(--ink);
+  background:
+    repeating-linear-gradient(0deg, transparent 0 34px, #274a7814 34px 35px),
+    #fffdf6; /* 藍の罫線を薄く引いた便箋風 */
+  display: flex; align-items: center; justify-content: center;
+}
+.ai-hand { font-size: clamp(5rem, 18vw, 9rem); }
+
+/* じゃん・けん の間、拳を上下に振る */
+.ai-hand.pumping { animation: pump .55s ease-in-out infinite; }
+@keyframes pump {
+  0%, 100% { transform: translateY(-26px); }
+  50%      { transform: translateY(26px); }
+}
+/* ぽん!で出すとき */
+.ai-hand.reveal { animation: reveal .28s cubic-bezier(.2, 2.2, .4, 1); }
+@keyframes reveal { from { transform: scale(.3) rotate(-16deg); } to { transform: scale(1); } }
+
+.ai-label {
+  font-size: .9rem; font-weight: 700; min-height: 1.6em;
+  color: var(--ai);
+}
+
+/* ---------------------------------------------------------------------
+ * ハンコ(勝・反則負け):判定の瞬間にドンと捺す
+ * ------------------------------------------------------------------- */
+.stamp {
+  position: absolute; z-index: 5;
+  border: 4px solid var(--shu); color: var(--shu);
+  font-family: var(--font-brush); text-align: center;
+  display: none;
+  align-items: center; justify-content: center;
+  text-shadow: 1px 1px 0 var(--shu);
+  background: #fffdf6d9; /* 下が透けるハンコ台紙 */
+}
+.stamp.on { display: flex; animation: stampDown .3s cubic-bezier(.3, 2.5, .5, 1) forwards; }
+@keyframes stampDown {
+  from { transform: scale(2.6) rotate(-24deg); opacity: 0; }
+  to   { transform: scale(1) rotate(-12deg);   opacity: 1; }
+}
+.stamp-ai   { right: 14px; bottom: 12px; width: 96px; height: 96px; border-radius: 50%; font-size: 3rem; }
+.stamp-user { right: 14px; bottom: 12px; width: 110px; height: 110px; font-size: 1.9rem; line-height: 1.2; }
+
+/* ---------------------------------------------------------------------
+ * 掛け声・集中線・勝敗の札(オーバーレイ)
+ * ------------------------------------------------------------------- */
+.overlay-layer { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+
+.chant-text {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-brush);
+  font-size: clamp(4rem, 13vw, 8.5rem);
+  color: var(--ink);
+  text-shadow: 3px 3px 0 #fffdf6, 5px 5px 0 var(--ink); /* 白フチ+ベタ影の版画風 */
+  opacity: 0;
+}
+.chant-text.say { animation: chantPop .55s ease-out forwards; }
+@keyframes chantPop {
+  0%   { opacity: 0; transform: scale(1.8); }
+  35%  { opacity: 1; transform: scale(1); }
+  80%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(.92); }
+}
+.chant-text.pon  { color: var(--shu); animation: ponBoom .7s cubic-bezier(.2, 2.5, .4, 1) forwards; }
+.chant-text.foul { color: var(--shu); animation: ponBoom .8s cubic-bezier(.2, 2.5, .4, 1) forwards; }
+@keyframes ponBoom {
+  0%   { opacity: 0; transform: scale(.2) rotate(-6deg); }
+  30%  { opacity: 1; transform: scale(1.3) rotate(2deg); }
+  45%  { transform: scale(1.05) rotate(-1deg); }
+  60%  { transform: scale(1.15); }
+  100% { opacity: 0; transform: scale(1.15); }
+}
+
+/* 漫画の集中線:repeating-conic-gradient を放射マスクで抜く(光彩の代わり) */
+.burst {
+  position: absolute; inset: -6%;
+  background: repeating-conic-gradient(var(--ink) 0deg 1.6deg, transparent 1.6deg 9deg);
+  -webkit-mask-image: radial-gradient(circle at center, transparent 32%, #000 47%, transparent 72%);
+          mask-image: radial-gradient(circle at center, transparent 32%, #000 47%, transparent 72%);
+  opacity: 0;
+}
+.burst.go { animation: burstOut .5s ease-out forwards; }
+@keyframes burstOut {
+  0%   { opacity: .9; transform: scale(.7); }
+  100% { opacity: 0;  transform: scale(1.15); }
+}
+
+/* 勝敗の札:行司の軍配よろしく下からせり上がる短冊 */
+.verdict {
+  position: absolute; left: 50%; bottom: 4%;
+  transform: translateX(-50%);
+  font-family: var(--font-brush);
+  font-size: clamp(1.5rem, 4.5vw, 2.6rem);
+  background: #fffdf6;
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  padding: .1em .8em;
+  white-space: nowrap;
+  color: var(--ink);
+  opacity: 0;
+}
+.verdict.foul-v { color: var(--shu); border-color: var(--shu); box-shadow: 4px 4px 0 var(--shu); }
+.verdict.show { animation: verdictIn .9s cubic-bezier(.2, 1.8, .4, 1) forwards; }
+@keyframes verdictIn {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(50px) rotate(-3deg); }
+  25%  { opacity: 1; transform: translateX(-50%) translateY(0) rotate(1deg); }
+  35%  { transform: translateX(-50%) rotate(0); }
+  85%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ---------------------------------------------------------------------
+ * 場内掲示板(戦績):黒板にアンバーのドット文字
+ * ------------------------------------------------------------------- */
+.scoreboard {
+  background: var(--board);
+  border: 3px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--ink);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+  gap: 2px;
+  width: 100%; max-width: 960px;
+  padding: 10px;
+}
+.score { text-align: center; padding: 6px 4px; }
+.score-label {
+  display: block;
+  color: #cfc6b8; font-size: .68rem; letter-spacing: .1em;
+  margin-bottom: 2px;
+}
+.score-value {
+  font-family: var(--font-lamp);
+  font-size: 1.55rem;
+  color: var(--lamp);
+  font-variant-numeric: tabular-nums;
+}
+.score-foul { color: #ff5c45; }
+
+/* ---------------------------------------------------------------------
+ * 奥付
+ * ------------------------------------------------------------------- */
+.footnote {
+  font-size: .75rem; color: #6d6455; text-align: center; line-height: 1.8;
+  max-width: 720px;
+}

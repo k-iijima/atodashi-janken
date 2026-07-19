@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>絶対負けない後出しじゃんけん番所</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- フォント:筆文字(Yuji Syuku)/レトロ見出し(RocknRoll One)/本文(Zen Kaku Gothic New)/電光掲示板(DotGothic16) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=RocknRoll+One&family=Yuji+Syuku&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ===== 看板 ===== -->
+<header class="signboard">
+  <h1 class="title">絶対負けない<span class="title-strong">後出し</span>じゃんけん番所</h1>
+  <div class="hanko" aria-label="勝率100%保証">勝率<br>100%</div>
+  <p class="subtitle">
+    「じゃん、けん」で拳を振り、「ぽん!」で手を出すべし。当機は人間の知覚より速く後出し致します。<br>
+    <strong>禁じ手:</strong>当機が手を出した後の手替えは「後出し」として反則負けと致します(当機は対象外)。
+  </p>
+</header>
+
+<p class="status" id="status">支度中…(初回は数秒かかります)</p>
+
+<!-- ===== 土俵(対戦エリア) ===== -->
+<main class="arena" id="arena">
+
+  <!-- 掛け声・判定などのオーバーレイ(土俵全体に重なる) -->
+  <div class="overlay-layer">
+    <div class="burst" id="burst"></div>              <!-- ぽん!の集中線 -->
+    <div class="chant-text" id="chantText"></div>     <!-- じゃん・けん・ぽん! -->
+    <div class="verdict" id="verdict"></div>          <!-- 勝敗の札 -->
+  </div>
+
+  <!-- 挑戦者(あなた)側 -->
+  <section class="fighter-card tilt-left">
+    <span class="name-tag">挑戦者</span>
+    <div class="video-wrap">
+      <video id="video" playsinline></video>
+      <canvas id="skeleton" width="640" height="480"></canvas>
+      <div class="stamp stamp-user" id="userStamp">反則<br>負け</div>
+    </div>
+  </section>
+
+  <!-- 当機(AI)側 -->
+  <section class="fighter-card tilt-right" id="aiCard">
+    <span class="name-tag name-tag-ai">当機</span>
+    <div class="ai-hand-box">
+      <div class="ai-hand" id="aiHand">🤖</div>
+      <div class="stamp stamp-ai" id="aiStamp">勝</div>
+    </div>
+    <div class="ai-label" id="aiLabel"></div>
+  </section>
+
+</main>
+
+<!-- ===== 場内掲示板(戦績) ===== -->
+<section class="scoreboard">
+  <div class="score"><span class="score-label">対戦数</span><span class="score-value" id="rounds">0</span></div>
+  <div class="score"><span class="score-label">当機勝利</span><span class="score-value" id="wins">0</span></div>
+  <div class="score"><span class="score-label">勝率</span><span class="score-value" id="rate">---</span></div>
+  <div class="score"><span class="score-label">後出し時間</span><span class="score-value" id="react">---</span></div>
+  <div class="score"><span class="score-label">同 平均</span><span class="score-value" id="reactAvg">---</span></div>
+  <div class="score"><span class="score-label">貴殿の反則</span><span class="score-value score-foul" id="fouls">0</span></div>
+  <div class="score"><span class="score-label">推論遅延</span><span class="score-value" id="infer">---</span></div>
+</section>
+
+<footer class="footnote">
+  映像はすべて手元のブラウザ内で処理され、外部へは一切送信されません(MediaPipe Hands / WASM)。<br>
+  ✊ グー ✌️ チョキ ✋ パー — 手をカメラに向けると勝負が始まります。
+</footer>
+
+<!-- MediaPipe(グローバルスクリプト)。ES module より先に読み込む -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
+<!-- 自作コードは ES module。file:// では動かないためローカルサーバか GitHub Pages で -->
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
