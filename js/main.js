@@ -30,6 +30,9 @@ let sendTime = 0;
 /** 最後に認識結果が届いた時刻(ウォッチドッグが見張る) */
 let lastResultAt = performance.now();
 
+/** 前フレームの手首位置(手の移動量=動いているか止まっているか の計測用) */
+let prevWrist = null;
+
 /** 認識結果が返ってくるたびに呼ばれる(≒毎フレーム) */
 function onResults(results) {
   lastResultAt = performance.now();
@@ -39,7 +42,20 @@ function onResults(results) {
   const landmarks = results.multiHandLandmarks?.[0] ?? null;
 
   ui.drawSkeleton(landmarks);
-  game.onFrame(landmarks ? classify(landmarks) : null, landmarks !== null);
+
+  // 手首(ランドマーク0)の1フレームあたりの移動量。
+  // 「振っている拳」と「出し終えて止めた手」を区別する材料として game に渡す。
+  // 手が見えない・現れた直後は Infinity(=動いている扱い)にしておく
+  let motion = Infinity;
+  if (landmarks) {
+    const w = landmarks[0];
+    if (prevWrist) motion = Math.hypot(w.x - prevWrist.x, w.y - prevWrist.y);
+    prevWrist = { x: w.x, y: w.y };
+  } else {
+    prevWrist = null;
+  }
+
+  game.onFrame(landmarks ? classify(landmarks) : null, landmarks !== null, motion);
 }
 
 /**
