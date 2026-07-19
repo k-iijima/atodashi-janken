@@ -43,18 +43,29 @@ export function chant(word, style = "say") {
 
 /* ---------------- 当機の手 ---------------- */
 
+/** 待機時に見せるブリキロボ(絵文字🤖はAIっぽいので自前のSVGを使う) */
+const ROBOT_HTML =
+  '<img class="robot-img" src="assets/robot.svg" alt="当機(ブリキロボット)">';
+
+/** 当機をロボットの姿に戻す。puzzled=true で首をかしげる */
+function showRobot(puzzled = false) {
+  const el = $("aiHand");
+  el.innerHTML = ROBOT_HTML;
+  el.classList.toggle("puzzled", puzzled);
+}
+
 /** じゃん・けん の間:拳を上下に振る */
 export function aiPump() {
   const el = $("aiHand");
   el.textContent = HAND_EMOJI.rock;
-  el.classList.remove("reveal");
+  el.classList.remove("reveal", "puzzled");
   el.classList.add("pumping");
 }
 
 /** 当機が手を出す(ぽん!の後) */
 export function aiReveal(aiHand, userHand) {
   const el = $("aiHand");
-  el.classList.remove("pumping");
+  el.classList.remove("pumping", "puzzled");
   el.textContent = HAND_EMOJI[aiHand];
   replay(el, "reveal");
   $("aiLabel").textContent =
@@ -62,11 +73,10 @@ export function aiReveal(aiHand, userHand) {
   replay($("aiStamp"), "on"); // 「勝」のハンコを捺す
 }
 
-/** 手が読めなかったとき */
+/** 手が読めなかったとき:ロボが首をかしげる */
 export function aiConfused() {
-  const el = $("aiHand");
-  el.classList.remove("pumping");
-  el.textContent = "🤔";
+  $("aiHand").classList.remove("pumping");
+  showRobot(true);
   $("aiLabel").textContent = "手が読めませんでした。もう一度!";
 }
 
@@ -80,7 +90,7 @@ export function aiCallFoul(newHand) {
 /** 次の勝負に向けて盤面を初期状態へ戻す(判定写真も外す) */
 export function resetBoard() {
   $("aiHand").classList.remove("pumping", "reveal");
-  $("aiHand").textContent = "🤖";
+  showRobot();
   $("aiLabel").textContent = "";
   $("aiStamp").classList.remove("on");
   $("userStamp").classList.remove("on");

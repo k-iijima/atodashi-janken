@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 232">
+  <!--
+    当機:昭和のブリキ玩具風ロボット(手描き調)
+    絵文字🤖の「AIっぽさ」を避けるため、墨の太線+生成り+朱/藍の差し色で
+    サイト全体(駄菓子屋ゲーセン×漫画)と同じトーンに揃えている。
+    パーツごとに少しずつ回転させて「手貼り・手描き」のゆらぎを出す。
+  -->
+  <g stroke="#2b2620" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="#fffdf6">
+
+    <!-- アンテナ -->
+    <path d="M100 30 L102 14" fill="none"/>
+    <circle cx="103" cy="10" r="6" fill="#c73e2d"/>
+
+    <!-- 頭 -->
+    <g transform="rotate(-1.5 100 72)">
+      <rect x="48" y="30" width="104" height="84" rx="14"/>
+      <!-- 横のボルト耳 -->
+      <circle cx="44" cy="84" r="8" fill="#274a78"/>
+      <circle cx="156" cy="82" r="8" fill="#274a78"/>
+      <!-- 必勝鉢巻(結び目は左側:右腕のグーと絡まないように) -->
+      <g transform="rotate(-2 100 52)">
+        <rect x="44" y="42" width="112" height="18" fill="#c73e2d"/>
+        <!-- 結び目とたなびく端 -->
+        <circle cx="42" cy="52" r="6" fill="#c73e2d"/>
+        <path d="M37 47 Q22 38 16 44 Q24 48 28 54" fill="#c73e2d" stroke-width="4"/>
+        <path d="M37 57 Q24 63 20 73 Q30 69 36 63" fill="#c73e2d" stroke-width="4"/>
+        <text x="100" y="57" font-family="serif" font-size="15" font-weight="bold"
+              fill="#fffdf6" stroke="none" text-anchor="middle">必勝</text>
+      </g>
+      <!-- 目:白目のハイライトで玩具らしく -->
+      <circle cx="78" cy="84" r="9" fill="#2b2620"/>
+      <circle cx="122" cy="84" r="9" fill="#2b2620"/>
+      <circle cx="81" cy="81" r="2.6" fill="#fffdf6" stroke="none"/>
+      <circle cx="125" cy="81" r="2.6" fill="#fffdf6" stroke="none"/>
+      <!-- 口:スピーカーの格子 -->
+      <path d="M86 98 L86 106" fill="none" stroke-width="4"/>
+      <path d="M100 98 L100 107" fill="none" stroke-width="4"/>
+      <path d="M114 98 L114 106" fill="none" stroke-width="4"/>
+    </g>
+
+    <!-- 首 -->
+    <rect x="88" y="114" width="24" height="10" rx="3"/>
+
+    <!-- 胴体 -->
+    <g transform="rotate(1 100 156)">
+      <rect x="54" y="124" width="92" height="64" rx="10"/>
+      <!-- リベット -->
+      <circle cx="64" cy="134" r="2.5" fill="#2b2620" stroke="none"/>
+      <circle cx="136" cy="134" r="2.5" fill="#2b2620" stroke="none"/>
+      <circle cx="64" cy="178" r="2.5" fill="#2b2620" stroke="none"/>
+      <circle cx="136" cy="178" r="2.5" fill="#2b2620" stroke="none"/>
+      <!-- 胸の計器:針は朱。当機の「本気度」を示す(常に振り切れている) -->
+      <circle cx="100" cy="156" r="17"/>
+      <path d="M100 156 L111 145" fill="none" stroke="#c73e2d" stroke-width="4"/>
+      <path d="M88 150 L91 152 M100 144 L100 148 M112 150 L109 152" fill="none" stroke-width="2.5"/>
+    </g>
+
+    <!-- 左腕(下ろしている) -->
+    <path d="M54 132 Q38 140 36 160" fill="none"/>
+    <circle cx="35" cy="168" r="9"/>
+
+    <!-- 右腕(グーを掲げる) -->
+    <path d="M146 134 Q168 130 170 112" fill="none"/>
+    <circle cx="171" cy="103" r="11" fill="#c73e2d"/>
+
+    <!-- 脚と足 -->
+    <rect x="68" y="188" width="18" height="18" rx="4"/>
+    <rect x="114" y="188" width="18" height="18" rx="4"/>
+    <rect x="58" y="206" width="38" height="14" rx="7" fill="#274a78"/>
+    <rect x="106" y="206" width="38" height="14" rx="7" fill="#274a78"/>
+  </g>
+</svg>
