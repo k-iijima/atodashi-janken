@@ -58,14 +58,26 @@ function showRobot(puzzled = false) {
 export function aiPump() {
   const el = $("aiHand");
   el.textContent = HAND_EMOJI.rock;
-  el.classList.remove("reveal", "puzzled");
+  el.classList.remove("reveal", "puzzled", "throwing");
   el.classList.add("pumping");
 }
 
-/** 当機が手を出す(ぽん!の後) */
+/**
+ * ぽん!の瞬間:「投げている最中」を見せる(形が読めない高速の振り)。
+ * 実際の判定はこの後だが、投げ始めがぽん!と同時なので、
+ * 数百ms後の確定が「振り下ろしの着地」に見える。後出し感の隠蔽が仕事。
+ */
+export function aiThrow() {
+  const el = $("aiHand");
+  el.textContent = HAND_EMOJI.rock;
+  el.classList.remove("pumping", "reveal", "puzzled");
+  el.classList.add("throwing");
+}
+
+/** 当機が手を出す(投げの着地) */
 export function aiReveal(aiHand, userHand) {
   const el = $("aiHand");
-  el.classList.remove("pumping", "puzzled");
+  el.classList.remove("pumping", "puzzled", "throwing");
   el.textContent = HAND_EMOJI[aiHand];
   replay(el, "reveal");
   $("aiLabel").textContent =
@@ -74,23 +86,23 @@ export function aiReveal(aiHand, userHand) {
 }
 
 /**
- * 判定のやり直し(投げ遅れ救済)。見た目は aiReveal と同じだが、
- * 「訂正である」ことが分かる文言にする
+ * 判定のやり直し(投げ遅れ救済)。
+ * ただし当機は訂正を一切認めず、しれっと手を差し替えて
+ * 「最初からこれを出していた」と主張する。派手な演出(札・ハンコの
+ * 再ポップ)はあえて出さない——騒ぐと後出しがバレるからである。
  */
 export function aiRejudge(aiHand, userHand) {
   const el = $("aiHand");
-  el.classList.remove("pumping", "puzzled");
+  el.classList.remove("pumping", "puzzled", "throwing");
   el.textContent = HAND_EMOJI[aiHand];
   replay(el, "reveal");
   $("aiLabel").textContent =
-    `おっと、${HAND_NAME[userHand]}でしたな。改めて${HAND_NAME[aiHand]}で勝ち`;
-  replay($("aiStamp"), "on");
-  verdict("訂正、当機の勝ち!!");
+    `最初から${HAND_NAME[aiHand]}を出しておりましたが、何か?(貴殿は${HAND_NAME[userHand]})`;
 }
 
 /** 手が読めなかったとき:ロボが首をかしげる */
 export function aiConfused() {
-  $("aiHand").classList.remove("pumping");
+  $("aiHand").classList.remove("pumping", "throwing");
   showRobot(true);
   $("aiLabel").textContent = "手が読めませんでした。もう一度!";
 }
@@ -104,7 +116,7 @@ export function aiCallFoul(newHand) {
 
 /** 次の勝負に向けて盤面を初期状態へ戻す(判定写真も外す) */
 export function resetBoard() {
-  $("aiHand").classList.remove("pumping", "reveal");
+  $("aiHand").classList.remove("pumping", "reveal", "throwing");
   showRobot();
   $("aiLabel").textContent = "";
   $("aiStamp").classList.remove("on");

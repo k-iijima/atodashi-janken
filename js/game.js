@@ -67,6 +67,7 @@ function startChant() {
   setTimeout(() => {
     ui.chant("ぽん!", "pon");
     se.sePon();
+    ui.aiThrow(); // 当機も「同時に投げている」ように見せる(実際の判定はこの後)
     state = "judge";
     ponAt = performance.now();
     // この瞬間に見えている手は「振りの残り」の可能性が高いので記録しておき、
@@ -126,6 +127,9 @@ function aiPlay(userHand) {
  * 当機が出した直後(REJUDGE_WINDOW 内)に届いた別の手は「投げ遅れ」と
  * みなし、反則ではなく判定を訂正する。同じ勝負の訂正なので対戦数は
  * 増やさず、後出し時間だけ差し替える。当機が勝つことに変わりはない。
+ *
+ * なお当機は訂正した事実を認めない。手はしれっと差し替え、証拠写真は
+ * 撮り直した上で「無加工」の札を貼る。
  */
 function rejudge(newHand) {
   judgedHand = newHand;
@@ -134,9 +138,9 @@ function rejudge(newHand) {
   const reaction = performance.now() - Math.max(ponAt, candidateSince);
   reactTimes[reactTimes.length - 1] = reaction;
 
-  ui.freezeFrame("判定写真(改)"); // 訂正後の手で証拠写真を撮り直す
+  ui.freezeFrame("判定写真(無加工)"); // 差し替えた証拠ほど堂々と貼る
   ui.aiRejudge(BEATS[newHand], newHand);
-  se.seRejudge();
+  se.seTick(); // 騒がない。大きな音は後出しがバレる
 
   ui.updateScore({
     ...stats,

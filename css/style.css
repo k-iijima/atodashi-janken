@@ -146,7 +146,19 @@ canvas#freeze.on { display: block; }
   0%, 100% { transform: translateY(-26px); }
   50%      { transform: translateY(26px); }
 }
-/* ぽん!で出すとき */
+/* ぽん!の瞬間:投げている最中(形が読めない高速の振り)。
+   実際の判定はまだだが、投げ始めをぽん!に揃えることで
+   「当機も同時に出している」ように見せる目くらまし */
+.ai-hand.throwing {
+  animation: throwJitter .09s linear infinite;
+  filter: blur(3px);
+}
+@keyframes throwJitter {
+  0%, 100% { transform: translateY(-16px) rotate(-10deg); }
+  50%      { transform: translateY(18px) rotate(8deg); }
+}
+
+/* 投げの着地(=判定完了)のポップ */
 .ai-hand.reveal { animation: reveal .28s cubic-bezier(.2, 2.2, .4, 1); }
 @keyframes reveal { from { transform: scale(.3) rotate(-16deg); } to { transform: scale(1); } }
 
