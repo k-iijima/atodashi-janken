@@ -73,6 +73,21 @@ export function aiReveal(aiHand, userHand) {
   replay($("aiStamp"), "on"); // 「勝」のハンコを捺す
 }
 
+/**
+ * 判定のやり直し(投げ遅れ救済)。見た目は aiReveal と同じだが、
+ * 「訂正である」ことが分かる文言にする
+ */
+export function aiRejudge(aiHand, userHand) {
+  const el = $("aiHand");
+  el.classList.remove("pumping", "puzzled");
+  el.textContent = HAND_EMOJI[aiHand];
+  replay(el, "reveal");
+  $("aiLabel").textContent =
+    `おっと、${HAND_NAME[userHand]}でしたな。改めて${HAND_NAME[aiHand]}で勝ち`;
+  replay($("aiStamp"), "on");
+  verdict("訂正、当機の勝ち!!");
+}
+
 /** 手が読めなかったとき:ロボが首をかしげる */
 export function aiConfused() {
   $("aiHand").classList.remove("pumping");

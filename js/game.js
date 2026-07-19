@@ -40,8 +40,10 @@ let missCount = 0;    // 手を連続で見失っているフレーム数
 
 // 勝負ごとの記録
 let ponAt = 0;          // 「ぽん!」を宣言した時刻
-let revealAt = 0;       // 当機が手を出した時刻(反則監視窓の起点)
+let revealAt = 0;       // 当機が手を出した時刻(再判定・反則監視窓の起点)
 let judgedHand = null;  // この勝負で挑戦者が出したと判定した手(nullなら不成立)
+let swingHand = null;   // 「ぽん!」の瞬間に見えていた手(じゃん・けんの振りの残り)
+let lastRaw = null;     // 直近フレームの生判定(swingHand の記録用)
 let judgeTimer = 0;
 let resultTimer = 0;
 let countTimer = 0;
@@ -67,7 +69,10 @@ function startChant() {
     se.sePon();
     state = "judge";
     ponAt = performance.now();
-    // ぽん!より前に出していた手を拾わないよう、デバウンスを仕切り直す
+    // この瞬間に見えている手は「振りの残り」の可能性が高いので記録しておき、
+    // 判定側で確定を粘らせる(境界ギリギリ対策その1)
+    swingHand = lastRaw;
+    // ぽん!より前のデバウンスを仕切り直す
     candidate = null;
     candidateCount = 0;
     judgeTimer = setTimeout(onJudgeTimeout, TIMING.JUDGE_TIMEOUT);
@@ -113,6 +118,34 @@ function aiPlay(userHand) {
   });
 
   // 手を出し続けていれば自動で次の勝負へ(この間の手替えは後出しとして検出する)
+  resultTimer = setTimeout(nextRoundOrIdle, TIMING.RESULT_MS);
+}
+
+/**
+ * 判定のやり直し(境界ギリギリ対策その2)。
+ * 当機が出した直後(REJUDGE_WINDOW 内)に届いた別の手は「投げ遅れ」と
+ * みなし、反則ではなく判定を訂正する。同じ勝負の訂正なので対戦数は
+ * 増やさず、後出し時間だけ差し替える。当機が勝つことに変わりはない。
+ */
+function rejudge(newHand) {
+  judgedHand = newHand;
+  // revealAt はあえて更新しない:訂正後にまた変えたら、それはもう故意(反則)
+
+  const reaction = performance.now() - Math.max(ponAt, candidateSince);
+  reactTimes[reactTimes.length - 1] = reaction;
+
+  ui.freezeFrame("判定写真(改)"); // 訂正後の手で証拠写真を撮り直す
+  ui.aiRejudge(BEATS[newHand], newHand);
+  se.seRejudge();
+
+  ui.updateScore({
+    ...stats,
+    reaction,
+    reactionAvg: reactTimes.reduce((a, b) => a + b, 0) / reactTimes.length,
+  });
+
+  // 訂正後の結果もゆっくり見せる
+  clearTimeout(resultTimer);
   resultTimer = setTimeout(nextRoundOrIdle, TIMING.RESULT_MS);
 }
 
@@ -214,6 +247,7 @@ export function onFrame(raw, present) {
   // --- デバウンス:同じ判定が連続した回数を数える ---
   // 1フレームの誤認識で当機が誤爆しないための核心部分。
   if (present) {
+    lastRaw = raw;
     if (raw !== candidate) {
       candidate = raw;
       candidateCount = 1;
@@ -224,22 +258,29 @@ export function onFrame(raw, present) {
   }
 
   // --- 判定中:手が安定したら当機が後出しする ---
-  if (state === "judge" && candidate !== null && candidateCount >= FRAMES.STABLE) {
-    aiPlay(candidate);
-    return;
+  // ただし「ぽん!の瞬間から出しっぱなしの手」(振りの残りのグー等)は、
+  // 本当にその手を出すつもりなのか、これから変わる途中なのか分からないので
+  // 長め(CARRY フレーム)に粘ってから確定する。別の手なら即確定でよい。
+  if (state === "judge" && candidate !== null) {
+    const need = candidate === swingHand ? FRAMES.CARRY : FRAMES.STABLE;
+    if (candidateCount >= need) {
+      aiPlay(candidate);
+      return;
+    }
   }
 
-  // --- 結果表示中:手替え(貴殿の後出し)を監視する ---
-  // 条件をすべて満たしたときだけ反則:
-  //   ・成立した勝負である(judgedHand がある)
-  //   ・当機が出した直後の監視窓の中である(窓の外の手ブレ・脱力は冤罪にしない)
-  //   ・判定した手と違う有効な手に変わった
-  //   ・通常より厳しいフレーム数だけ連続した(冤罪防止)
-  // なお手を引っ込めるだけ(candidate が null)はセーフ。
+  // --- 結果表示中:手替えを監視する ---
+  // 変更が届いた時刻で扱いを変える(config.js の窓の解説を参照):
+  //   再判定窓内 → 投げ遅れとみなし、判定をやり直す(反則ではない)
+  //   反則窓内   → 当機の手を見てから変えたとみなし、反則負け
+  // なお手を引っ込めるだけ(candidate が null)はいつでもセーフ。
   if (state === "result" && judgedHand !== null &&
-      performance.now() - revealAt <= TIMING.FOUL_WINDOW &&
-      candidate !== null && candidate !== judgedHand &&
-      candidateCount >= FRAMES.FOUL) {
-    foul(candidate);
+      candidate !== null && candidate !== judgedHand) {
+    const dt = performance.now() - revealAt;
+    if (dt <= TIMING.REJUDGE_WINDOW && candidateCount >= FRAMES.STABLE) {
+      rejudge(candidate);
+    } else if (dt <= TIMING.FOUL_WINDOW && candidateCount >= FRAMES.FOUL) {
+      foul(candidate);
+    }
   }
 }

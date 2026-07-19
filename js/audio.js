@@ -55,3 +55,9 @@ export function seFoul() {
 
 /** カウントダウンの小さな拍子木 */
 export function seTick() { tone(550, 0.08, 0.1); }
+
+/** 判定やり直しの「おっと」(中音2つ) */
+export function seRejudge() {
+  tone(660, 0.12, 0.14);
+  setTimeout(() => tone(990, 0.2, 0.14), 100);
+}
