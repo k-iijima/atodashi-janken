@@ -48,6 +48,10 @@
       <span class="photo-tag" id="photoTag">判定写真</span>
       <div class="stamp stamp-user" id="userStamp">反則<br>負け</div>
     </div>
+    <!-- カメラが複数あるときだけ表示される(1台なら選ぶ意味がない) -->
+    <label class="camera-picker" id="cameraPicker" hidden>
+      撮影機:<select id="cameraSelect"></select>
+    </label>
   </section>
 
   <!-- 当機(AI)側 -->
@@ -78,8 +82,8 @@
   ✊ グー ✌️ チョキ ✋ パー — 手をカメラに向けると勝負が始まります。
 </footer>
 
-<!-- MediaPipe(グローバルスクリプト)。ES module より先に読み込む -->
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<!-- MediaPipe(グローバルスクリプト)。ES module より先に読み込む。
+     camera_utils は deviceId 指定ができないため使わない(js/camera.js 参照) -->
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
 

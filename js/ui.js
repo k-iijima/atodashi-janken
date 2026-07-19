@@ -191,6 +191,32 @@ export function countdown(n) {
   chant(String(n), "count");
 }
 
+/* ---------------- カメラ選択プルダウン ---------------- */
+
+/**
+ * カメラ一覧をプルダウンに反映する。1台しかなければ選ぶ意味がないので隠す。
+ * @param {MediaDeviceInfo[]} devices - videoinput のデバイス一覧
+ * @param {string|null} currentId - いま使っているカメラの deviceId
+ */
+export function populateCameras(devices, currentId) {
+  const sel = $("cameraSelect");
+  sel.innerHTML = "";
+  devices.forEach((d, i) => {
+    const opt = document.createElement("option");
+    opt.value = d.deviceId;
+    // label は許可前だと空のことがあるので連番で代用する
+    opt.textContent = d.label || `撮影機 ${i + 1}`;
+    sel.appendChild(opt);
+  });
+  if (currentId) sel.value = currentId;
+  $("cameraPicker").hidden = devices.length < 2;
+}
+
+/** プルダウンでカメラが選ばれたときのハンドラを登録する */
+export function onCameraChange(handler) {
+  $("cameraSelect").addEventListener("change", (e) => handler(e.target.value));
+}
+
 /* ---------------- 骨格描画 ---------------- */
 
 const canvas = $("skeleton");

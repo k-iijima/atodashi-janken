@@ -112,6 +112,19 @@ video, canvas#skeleton, canvas#freeze {
 canvas#freeze { display: none; z-index: 4; }
 canvas#freeze.on { display: block; }
 
+/* 撮影機(カメラ)のプルダウン。複数台あるときだけ現れる */
+.camera-picker {
+  display: flex; align-items: center; gap: 6px;
+  font-size: .8rem; font-weight: 700;
+  align-self: flex-start;
+}
+.camera-picker[hidden] { display: none; }
+.camera-picker select {
+  font-family: var(--font-body); font-size: .8rem; color: var(--ink);
+  background: #fffdf6; border: 2px solid var(--ink); border-radius: 0;
+  padding: 3px 8px; max-width: 260px;
+}
+
 /* 写真の隅に貼る説明札(「判定写真」「犯行写真」) */
 .photo-tag {
   position: absolute; left: 10px; bottom: 10px; z-index: 6;
